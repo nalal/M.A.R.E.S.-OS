@@ -10,7 +10,7 @@ void dec_cur_collumn(int times)
 {
 	while(times > 0)
 	{
-		if(cur_collumn == 0)
+		if(cur_collumn == 1)
 			cur_collumn = 80;
 		else
 			cur_collumn--;
@@ -109,14 +109,15 @@ void print_string(char * print_str, int offset)
 
 void print_loaded()
 {
-	char * load_complete_str = "[M.A.R.E.S. KERNEL LOADED]\n(VERSION 1.0.0)\n";
+	char * load_complete_str = "Multitasking Automated Resource and Execution System initialized.\nKERNEL VERSION:\n    1.0.0\n";
 	print_string(load_complete_str, STARTING_FB);
 }
 
 extern void main()
 {
 	print_loaded();
-	char * str = "SYSTERM IS WIP, NO FURTHER FUNCTIONALITY AVAILABLE.\n";
+	
+	char * str = "Written, developed and tested by:\n    Nac/Nalal/Host/Noah\n";
 	print_string(str, 0);
 	return;
 }
