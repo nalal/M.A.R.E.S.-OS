@@ -2,22 +2,10 @@
 call clear_fb
 
 [org 0x7c00]
-mov ah, 0x0e
+; Set kernel location in memory
+KERNEL_REG equ 0x2000
+mov [BOOT_DISK], dl
 
-; Print bootloader version
-mov bx, msg_str_0
-call print_str
-call print_nl ; Using manual newline so I can reuse ver string in protected mode
-call print_crossbar
-
-; Print execution mode
-mov bx, msg_str_1
-call print_str
-
-mov bx, input_str
-call print_str
-
-; Jump forward to end
 jmp end_prints
 
 ; Hacky 16 bit clear screen command I coppied from stack overflow like
@@ -37,118 +25,34 @@ clear_fb: ; Clears frame buffer
 	rep stosw
 	ret
 
-; Print bar across screen made up of '='s
-print_crossbar:
-	mov cl, 80
-	mov al, '='
-	start_pcb:
-	cmp cl, 0
-	je exit_pcb
-	int 0x10
-	dec cl
-	jmp start_pcb
-	exit_pcb:
-	ret
-
-; Print newline routine
-print_nl:
-	mov bx, nl_str
-	call print_str
-	ret
-
-; Print string routine
-print_str:
-	mov al, [bx]
-	cmp al, 0
-	je term_print
-	int 0x10
-	inc bx
-	jmp print_str
-	term_print:
-	ret
-
-pressed_esc:
-	mov ah, 0x0e
-	;call print_nl
-	;mov bx, ch_esc
-	;call print_str
-	jmp esc_ret
-
-pnl_input:
-	mov ah, 0x0e
-	call print_nl
-	jmp read_k_input
-
-read_string:
-	mov al, [bx]
-	cmp al, 0
-	je exit_rs
-	inc bx
-	int 0x10
-	jmp read_string
-	exit_rs:
-	ret
-
-;disk_read_err:
-	;mov bx, err_str
-	;call print_str
-	;mov bx, disk_read_err_str
-	;call print_str
-	;ret
-
-; End of info string print
 end_prints:
 
 
-read_k_input:
-	mov ah, 0
-	int 0x16
-	cmp ah, 0x01
-	je pressed_esc
-	;cmp ah, 0x1C
-	;je pnl_input
-	mov ah, 0x0e
-	;int 0x10
-	jmp read_k_input
-esc_ret:
+mov ax, 0
+xor ax, ax
+mov es, ax
+mov ds, ax
+mov bp, 0x8000
+mov sp, bp
 
-;jmp end_disk
-;print_str_from_disk:
-;mov bx, disk_load
-;call print_str
+mov bx, KERNEL_REG
+mov dh, 20
+; sectors to read
+mov ah, 0x02
+mov al, dh
+; cyl
+mov ch, 0x00
+; sector
+mov cl, 0x02
+; header
+mov dh, 0
+; offset
+mov dl, [BOOT_DISK]
+int 0x13
 
-;mov ax, 0
-;mov es, ax
-
-;mov ah, 2
-;; sectors to read
-;mov al, 8
-;; cyl
-;mov ch, 0
-;; sector
-;mov cl, 2
-;; header
-;mov dh, 0
-;; offset
-
-;mov bx, 0x7e00
-;int 0x13
-;push bx
-;mov bx, 0x0001
-;cmp bh, 0
-;je disk_read_ok
-;disk_read_fail:
-;pop bx
-;mov ah, 0x0e
-;;call disk_read_err
-;jmp end_disk
-;disk_read_ok:
-;	pop bx
-;	mov ah, 0x0e
-;	call read_string
-;	jmp read_k_input
-
-;end_disk:
+mov ah, 0x0
+mov al, 0x3
+int 0x10
 
 call clear_fb
 
@@ -161,6 +65,8 @@ jmp CODE_SEG:PROTECTED_MODE
 
 [bits 32]
 PROTECTED_MODE:
+FRAMEBUFF_PTR equ 0x1000
+mov word [FRAMEBUFF_PTR], 0
 mov edx, 0xb8000 ; framebuffer register
 mov cl, 80 ; collumn counter
 mov bx, msg_str_0
@@ -172,6 +78,17 @@ call print_str_32
 call print_newline_32
 mov bx, k_loading_str_32
 call print_str_32
+mov ax, DATA_SEG
+mov ds, ax
+mov ss, ax
+mov es, ax
+mov fs, ax
+mov gs, ax
+mov ebp, 0x90000
+mov esp, ebp
+
+jmp KERNEL_REG
+
 
 jmp b32_funcs_end
 b32_funcs:
@@ -221,6 +138,7 @@ print_char_32:
 
 inc_fb_addr:
 	add edx, 0x00002
+	inc word [FRAMEBUFF_PTR]
 	ret
 
 reset_col_counter_32:
@@ -261,35 +179,19 @@ GDT_DESC:
 	CODE_SEG equ code_desc - GDT_START
 	DATA_SEG equ data_desc - GDT_START
 
-;ch_esc:
-;	db "[ESC]", 13, 10, 0
-
-;err_str:
-;	db "[ERR]: ", 0
-
-;disk_read_err_str:
-	;db "DISK READ FAILURE", 13, 10, 0
+BOOT_DISK:
+	db 0
 
 ; Newline string
 nl_str:
 	db 13, 10, 0
 
-input_str:
-	db "(Press ESC to initialize 32BIT mode)", 13, 10, 0
-
 k_loading_str_32:
 	db "LOADING 'M.A.R.E.S.' KERNEL...", 0
-
-;disk_load:
-;	db "LOADING DATA FROM DISK...", 13, 10, 0
 
 ; Bootloader version
 msg_str_0:
 	db "FTC-BOOTLOADER v1.0.0", 0
-
-; Realmode notification string
-msg_str_1:
-	db "[REAL MODE]", 13, 10, 0
 
 times 510-($-$$) db 0
 dw 0xaa55
