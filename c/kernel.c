@@ -109,7 +109,7 @@ void print_string(char * print_str, int offset)
 
 void print_loaded()
 {
-	char * load_complete_str = "M.A.R.E.S. KERNEL LOADED\n(VERSION 1.0.0)\n";
+	char * load_complete_str = "[M.A.R.E.S. KERNEL LOADED]\n(VERSION 1.0.0)\n";
 	print_string(load_complete_str, STARTING_FB);
 }
 
