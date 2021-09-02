@@ -65,19 +65,6 @@ jmp CODE_SEG:PROTECTED_MODE
 
 [bits 32]
 PROTECTED_MODE:
-FRAMEBUFF_PTR equ 0x1000
-mov word [FRAMEBUFF_PTR], 0
-mov edx, 0xb8000 ; framebuffer register
-mov cl, 80 ; collumn counter
-mov bx, msg_str_0
-call print_str_32
-call print_newline_32
-call print_crossbar_32
-mov bx, loaded_32_str
-call print_str_32
-call print_newline_32
-mov bx, k_loading_str_32
-call print_str_32
 mov ax, DATA_SEG
 mov ds, ax
 mov ss, ax
@@ -94,65 +81,12 @@ jmp KERNEL_REG
 jmp b32_funcs_end
 b32_funcs:
 
-print_newline_32:
-	cmp cl, 0
-	je p_nl_32_exit
-	mov al, ' '
-        call print_char_32
-	jmp print_newline_32
-	p_nl_32_exit:
-	call reset_col_counter_32
-	ret
 
-print_crossbar_32:
-	cmp cl, 0
-	je pcb_32_exit
-	mov al, '='
-        call print_char_32
-	jmp print_crossbar_32
-	pcb_32_exit:
-	call reset_col_counter_32
-	ret
-
-print_str_32:
-	cmp al, 0
-	je term_print_32
-        mov al, [bx]
-        mov ah, 4
-	call print_char_32
-	inc bx
-	jmp print_str_32
-	term_print_32:
-	ret
-
-print_char_32:
-	mov [edx], ax
-	call inc_fb_addr
-	cmp cl, 0
-	je reset_pc32_exit
-	dec cl
-	jmp print_char_32_exit
-	reset_pc32_exit:
-	call reset_col_counter_32
-	print_char_32_exit:
-	ret
-
-inc_fb_addr:
-	add edx, 0x00002
-	inc word [FRAMEBUFF_PTR]
-	ret
-
-reset_col_counter_32:
-	mov cl, 80
-	ret
 
 b32_funcs_end:
 
 
 jmp $
-
-loaded_32_str:
-	db "[PROTECTED MODE]", 0
 
 GDT_START:
 	null_desc:
@@ -183,22 +117,5 @@ GDT_DESC:
 BOOT_DISK:
 	db 0
 
-; Newline string
-nl_str:
-	db 13, 10, 0
-
-k_loading_str_32:
-	db "LOADING 'M.A.R.E.S.' KERNEL...", 0
-
-; Bootloader version
-msg_str_0:
-	db "FTC-BOOTLOADER v1.0.0", 0
-
 times 510-($-$$) db 0
 dw 0xaa55
-
-
-
-;db "=PROTECTED MODE (32 BIT) INITIALIZED=", 13, 10, 0
-
-;times 512 db 0

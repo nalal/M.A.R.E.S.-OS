@@ -1,16 +1,20 @@
 #include "printing_defines.h"
 
+// Framebuffer pointer for tracking the next address to push memory too
 char * fb_pointer = (char*)FB_START;
-int cur_collumn = 80;
+// Current collumn for tracking which collumn we're at, inverted
+int cur_collumn = VGA_W;
+// Current row for tracking which row we're printing to, inverted
+int cur_row = VGA_H;
+
 
 void dec_cur_collumn(int times)
 {
 	while(times > 0)
 	{
-		if(cur_collumn == 1)
-			cur_collumn = 80;
-		else
-			cur_collumn--;
+		cur_collumn--;
+		if(cur_collumn == 0)
+			cur_collumn = VGA_W;
 		times--;
 	}
 }
@@ -45,13 +49,13 @@ void print_ch(char ch)
 void print_newline()
 {
 	inc_fb_pointer(cur_collumn);
-	cur_collumn = 80;
+	cur_collumn = VGA_W;
 }
 
 void clr_line()
 {
-	dec_fb_pointer(80 - cur_collumn);
-	for(int i = 0; i < 80; i++)
+	dec_fb_pointer(VGA_W - cur_collumn);
+	for(int i = 0; i < VGA_W; i++)
 	{
 		print_ch(' ');
 	}
@@ -60,13 +64,29 @@ void clr_line()
 void reset_fb_pointer()
 {
 	fb_pointer = (char*)FB_START;
-	cur_collumn = 80;
+	cur_collumn = VGA_W;
+	cur_row = VGA_H;
+}
+
+void move_to(int col, int row)
+{
+	reset_fb_pointer();
+	inc_fb_pointer(col * row);
+}
+
+void print_crossbar()
+{
+	while(cur_collumn > 1)
+	{
+		print_ch(CROSSBAR_CHAR);
+	}
+	print_ch(CROSSBAR_CHAR);
 }
 
 void clr_screen()
 {
 	reset_fb_pointer();
-	for(int i = 0; i < 25; i++)
+	for(int i = 0; i < VGA_H; i++)
 	{
 		clr_line();
 		print_newline();
@@ -75,20 +95,8 @@ void clr_screen()
 }
 
 
-void print_string(char * print_str, int offset)
+void print_string(char * print_str/*, int offset*/)
 {
-	switch(offset)
-	{
-		case 0:
-			break;
-		default:
-			for(int x = 0; x < offset; x++)
-			{
-				
-				fb_pointer++;
-				fb_pointer++;
-			}
-	}
 	int i = 0;
 	while(print_str[i] != '\0')
 	{

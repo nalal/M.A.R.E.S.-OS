@@ -17,6 +17,8 @@ void reset_fb_pointer();
 
 void clr_screen();
 
-void print_string(char * print_str, int offset);
+void print_string(char * print_str/*, int offset*/);
+
+void print_crossbar();
 
 #endif
