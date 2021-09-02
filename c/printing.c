@@ -103,3 +103,9 @@ void print_string(char * print_str, int offset)
 		i++;
 	}
 }
+
+// Will need to deal with memory allocation first
+//void strcpy(char * targ_str, const char * source_str)
+//{
+	
+//}
