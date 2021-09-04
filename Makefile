@@ -19,8 +19,6 @@ print_c: prep
 kernel_c: prep
 	i386-elf-gcc -ffreestanding -m32 -g -c c/kernel.c -o build/c_kernel.o
 
-
-
 link: prep kernel_c print_c kernel_asm
 	i386-elf-ld -o build/kernel.bin -Ttext 0x2000 build/k_entry.abn build/c_kernel.o build/c_print.o --oformat binary
 
