@@ -6,7 +6,7 @@ call clear_fb
 KERNEL_REG equ 0x2000
 mov [BOOT_DISK], dl
 
-jmp end_prints
+jmp B16_FUNCS
 
 ; Hacky 16 bit clear screen command I coppied from stack overflow like
 ; a lazy moron, I know what it does I just couldn't be bothered to 
@@ -25,7 +25,13 @@ clear_fb: ; Clears frame buffer
 	rep stosw
 	ret
 
-end_prints:
+ENABLE_A20:
+	in al, 0x92
+	or al, 2
+	out 0x92, al
+	ret
+
+B16_FUNCS:
 
 
 mov ax, 0
@@ -56,6 +62,7 @@ int 0x10
 
 call clear_fb
 
+call ENABLE_A20
 cli
 lgdt [GDT_DESC]
 mov eax, cr0
@@ -74,14 +81,10 @@ mov gs, ax
 mov ebp, 0x90000
 mov esp, ebp
 
-
 jmp KERNEL_REG
-
 
 jmp b32_funcs_end
 b32_funcs:
-
-
 
 b32_funcs_end:
 
